@@ -1,11 +1,10 @@
 from flask import Flask
 from flask_restful import Api
-from flask_jwt import JWT
+from flask_jwt_extended import JWTManager
 
-from resources.user import UserRegister
+from resources.user import UserRegister, User, UserLogin, TokenRefresh
 from resources.item import Items, Item
 from resources.store import Store, Stores
-from security import authenticate, identity
 
 
 app = Flask(__name__)
@@ -13,6 +12,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 # Turns off the flask sqlalchemy modification tracker
 # But does not turn of the sqlalchemy modification tracker, which is better
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Allows exception from flask extensions to be propogated
+app.config['PROPOGATE_EXCEPTION'] = True
+
 app.secret_key = 'topsecret'
 api = Api(app)
 
@@ -22,13 +24,24 @@ def create_tables():
     db.create_all()
 
 
-jwt = JWT(app, authenticate, identity)  # /auth
+jwt = JWTManager(app)
+
+
+@jwt.user_claims_loader
+def add_claims_to_jwt(identity):
+    if identity == 1:
+        return {'is_admin': True}
+    return {'is_admin': False}
+
 
 api.add_resource(Items, '/items')
 api.add_resource(Item, '/item/<string:name>')
-api.add_resource(UserRegister, '/register')
 api.add_resource(Stores, '/stores')
 api.add_resource(Store, '/store/<string:name>')
+api.add_resource(UserRegister, '/register')
+api.add_resource(User, '/user/<int:id>')
+api.add_resource(UserLogin, '/login')
+api.add_resource(TokenRefresh, '/refresh')
 
 if __name__ == '__main__':
     from db import db
