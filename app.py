@@ -43,7 +43,6 @@ def add_claims_to_jwt(identity):
 def check_token_blacklisted(decrypted_token):
     # decrypted_token gets sent to this function.
     # the values of decrypted token gets set internally by jwt
-    print decrypted_token
     return decrypted_token['jti'] in BLACKLIST
 
 
@@ -53,7 +52,7 @@ def exprired_token_callback():
     return jsonify({
         'descrption': 'Token had expired',
         'error': 'token_expired'
-    })
+    }), 401
 
 
 # Triggered when token in not valid JWT
@@ -62,7 +61,7 @@ def invalid_token_callback(error):
     return jsonify({
         'description': 'Invalid JWT token format',
         'error': 'invalid_token'
-    })
+    }), 401
 
 
 # Triggered with no access token is supplied
@@ -71,7 +70,7 @@ def unauthorized_callback(error):
     return jsonify({
         'description': 'Request does not contain access token',
         'error': 'unauthorized_token'
-    })
+    }), 401
 
 
 # Triggered when token is not fresh and endpoint required fresh token
@@ -80,7 +79,7 @@ def fresh_token_callback():
     return jsonify({
         'description': 'The token is not fresh',
         'error': 'not_fresh_token'
-    })
+    }), 401
 
 
 # Triggered when token is added to the blacklist
@@ -89,14 +88,7 @@ def revoked_token_called():
     return jsonify({
         'description': 'The token has been revoked',
         'error': 'token_revoked'
-    })
-
-
-@jwt.user_claims_loader
-def add_claims_to_jwt(identity):
-    if identity == 1:
-        return {'is_admin': True}
-    return {'is_admin': False}
+    }), 401
 
 
 api.add_resource(Items, '/items')
