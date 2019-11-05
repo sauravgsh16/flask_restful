@@ -1,45 +1,38 @@
-import sqlite3
-from models.user import UserModel
+from flask import request
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
     get_jwt_identity,
+    get_raw_jwt,
     jwt_refresh_token_required,
-    jwt_required,
-    get_raw_jwt
+    jwt_required
 )
 from werkzeug.security import safe_str_cmp
 
+from schemas.user import UserSchema
+from models.user import UserModel
 from blacklist import BLACKLIST
 
 
-_parser = reqparse.RequestParser()
-_parser.add_argument(
-    'username',
-    type=str,
-    required=True,
-    help='This field cannot be left blank'
-)
-_parser.add_argument(
-    'password',
-    type=str,
-    required=True,
-    help='This field cannot be left blank'
-)
-
+user_schema = UserSchema()
 
 class UserRegister(Resource):
 
     def post(self):
-        data = _parser.parse_args()
+        user = user_schema.load(request.get_json())
 
-        user = UserModel.find_by_name(data['username'])
-        if user:
+        # Using flask-marshmallow, we no longer get a dict object. Instead, we
+        # get an UserModel object when load is called. user_schema knows this
+        # info, from the definition of UserSchema
+        # prev : user = UserModel.find_by_name(user['username'])
+        if UserModel.find_by_name(user.username):
             return {'message': 'A user with this username already exists'}, 400
 
         # or unpack as: UserModel(**data)
-        user = UserModel(data['username'], data['password'])
+        
+        # No need to create instance of UserModel
+        # user = UserModel(data['username'], data['password'])
         user.save_to_db()
 
         return {'message': 'Successfully created user'}, 201
@@ -48,15 +41,14 @@ class UserRegister(Resource):
 class User(Resource):
 
     @classmethod
-    def get(cls, user_id):
+    def get(cls, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
             return {'message': 'User not found'}, 404
-
-        return user.json()
+        return user_schema.dump(user)
 
     @classmethod
-    def delete(cls, user_id):
+    def delete(cls, user_id: int):
         user = UserModel.find_by_id(user_id)
         if not user:
             return {'message': 'User not found'}, 404
@@ -68,10 +60,11 @@ class User(Resource):
 class UserLogin(Resource):
 
     def post(self):
-        data = _parser.parse_args()
+        user_data = user_schema.load(request.get_json())
 
-        user = UserModel.find_by_name(data['username'])
-        if user and safe_str_cmp(user.password, data['password']):
+        user = UserModel.find_by_name(user_data.username)
+
+        if user and safe_str_cmp(user.password, user_data.password):
             access_token = create_access_token(identity=user.id, fresh=True)
             refresh_token = create_refresh_token(user.id)
             return {

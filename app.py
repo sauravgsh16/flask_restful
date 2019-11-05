@@ -1,11 +1,13 @@
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
+from marshmallow import ValidationError
 
 from resources.user import UserRegister, User, UserLogin, TokenRefresh, UserLogout
 from resources.item import Items, Item
 from resources.store import Store, Stores
 from blacklist import BLACKLIST
+from ma import ma
 
 
 app = Flask(__name__)
@@ -30,6 +32,13 @@ def create_tables():
 
 jwt = JWTManager(app)
 
+
+@app.errorhandler(ValidationError)
+def handle_marshmallow_validation(err):
+    return jsonify({
+        'description': err.messages,
+        'error': 'Validation Error'
+    }), 400
 
 @jwt.user_claims_loader
 def add_claims_to_jwt(identity):
@@ -96,7 +105,7 @@ api.add_resource(Item, '/item/<string:name>')
 api.add_resource(Stores, '/stores')
 api.add_resource(Store, '/store/<string:name>')
 api.add_resource(UserRegister, '/register')
-api.add_resource(User, '/user/<int:id>')
+api.add_resource(User, '/user/<int:user_id>')
 api.add_resource(UserLogin, '/login')
 api.add_resource(UserLogout, '/logout')
 api.add_resource(TokenRefresh, '/refresh')
@@ -104,4 +113,5 @@ api.add_resource(TokenRefresh, '/refresh')
 if __name__ == '__main__':
     from db import db
     db.init_app(app)
+    ma.init_app(app) # Attach flask-marshmallow to current app
     app.run(port=5000, debug=True)
