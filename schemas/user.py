@@ -8,4 +8,4 @@ class UserSchema(ma.ModelSchema):
         model = UserModel
         # Tells marshmallow, specific field for only for loading or dumping data
         load_only = ('password',)
-        dump_only = ('id',)
+        dump_only = ('id', 'activated')
