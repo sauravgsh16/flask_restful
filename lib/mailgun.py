@@ -28,6 +28,6 @@ class Mailgun:
         )
 
         if response.status_code != 200:
-            raise MailgunException('Error is sending confirmation email')
+            raise MailgunException('Error in sending confirmation email')
 
         return response

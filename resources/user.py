@@ -1,5 +1,5 @@
 import traceback
-from flask import request, make_response, render_template
+from flask import request
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import (
     create_access_token,
@@ -13,6 +13,7 @@ from werkzeug.security import safe_str_cmp
 
 from schemas.user import UserSchema
 from models.user import UserModel
+from models.confirmation import ConfirmationModel
 from lib.mailgun import MailgunException
 from blacklist import BLACKLIST
 
@@ -40,11 +41,15 @@ class UserRegister(Resource):
         # user = UserModel(data['username'], data['password'])
         try:
             user.save_to_db()
+            # create new confirmation and save to db
+            confirmation = ConfirmationModel(user.id)
+            confirmation.save_to_db()
             user.send_confirmation_email()
         except MailgunException as err:
-            user.delete_from_db()
+            user.delete_from_db() # rollback
             return {'message': str(err)}, 500
         except:
+            user.delete_from_db() # rollback
             traceback.print_exc()
             return {'message': 'Failed to create user'}, 500
 
@@ -79,7 +84,8 @@ class UserLogin(Resource):
         user = UserModel.find_by_name(user_data.username)
 
         if user and safe_str_cmp(user.password, user_data.password):
-            if user.activated:
+            confirmation = user.most_recent_confirmation
+            if confirmation and confirmation.confirmed:
                 access_token = create_access_token(identity=user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
                 return {
@@ -88,21 +94,6 @@ class UserLogin(Resource):
                 }, 200
             return {'message': 'User {} not confirmed'.format(user.username)}, 200
         return {'message': 'User credentials invalid'}, 401
-
-
-class UserConfirm(Resource):
-
-    @classmethod
-    def get(cls, user_id: int):
-
-        user = UserModel.find_by_id(user_id)
-        if not user:
-            return {'message': 'User not found'}, 404
-        
-        user.activated = True
-        user.save_to_db()
-        headers = {'Content-Type': 'text/html'}
-        return make_response(render_template('confirmation_page.html', email=user.email), 200, headers)
 
 
 class UserLogout(Resource):

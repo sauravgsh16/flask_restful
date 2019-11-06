@@ -2,7 +2,7 @@ from ma import ma
 
 from models.store import StoreModel
 # We import this, since ItemModel and StoreModel have a relationship
-# In case StoreModel does not get imported before ItemModel, it will break
+# In case ItemModel does not get imported before StoreModel, it will break
 from models.item import ItemModel
 from schemas.item import ItemSchema
 
