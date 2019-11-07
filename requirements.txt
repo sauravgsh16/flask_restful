@@ -2,6 +2,7 @@ Flask-JWT-Extended
 Flask-RESTful
 Flask-SQLAlchemy
 Flask-marshmallow
+Flask-Uploads
 marshmallow-sqlalchemy
 marshmallow
 requests

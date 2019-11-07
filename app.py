@@ -1,7 +1,9 @@
+import os
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from marshmallow import ValidationError
+from dotenv import load_dotenv
 
 from resources.user import (
     UserRegister,
@@ -28,7 +30,9 @@ app.config['PROPOGATE_EXCEPTION'] = True
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 
-app.secret_key = 'topsecret'
+load_dotenv(".env", verbose=True)
+
+app.secret_key = os.environ['SECRET_KEY']
 api = Api(app)
 
 

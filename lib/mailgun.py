@@ -1,3 +1,4 @@
+import os
 from requests import post
 
 
@@ -8,9 +9,9 @@ class MailgunException(Exception):
 
 class Mailgun:
 
-    MAILGUN_DOMAIN = "sandboxe43757f5d97049139699ab8c84c7eca6.mailgun.org"
-    MAILGUN_API_KEY = "3d8433b5ba8f1622374c12c70eccfd79-f696beb4-ab0c0c60"
-    FROM_EMAIL = "postmaster@sandboxe43757f5d97049139699ab8c84c7eca6.mailgun.org"
+    MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN")
+    MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY")
+    FROM_EMAIL = os.getenv("FROM_EMAIL")
     FROM_TITLE = "Store Rest API"
 
     @classmethod
