@@ -1,25 +1,33 @@
 import os
+
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from marshmallow import ValidationError
 from dotenv import load_dotenv
 
+load_dotenv(".env", verbose=True)
+
+from auth import oauth
 from resources.user import (
     UserRegister,
     User,
     UserLogin,
     UserLogout,
-    TokenRefresh
+    TokenRefresh,
+    SetUserPassword
 )
 from resources.item import Items, Item
 from resources.store import Store, Stores
 from resources.confirmation import Confirmation, ConfirmationByUser
+from resources.github import GithubLogin, GithubAuthorize
 from blacklist import BLACKLIST
 from ma import ma
 
 
 app = Flask(__name__)
+# postgresql://postgres:laptop_00@localhost:5432/postgres
+# 'sqlite:///data.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 # Turns off the flask sqlalchemy modification tracker
 # But does not turn of the sqlalchemy modification tracker, which is better
@@ -29,8 +37,6 @@ app.config['PROPOGATE_EXCEPTION'] = True
 # Blacklist configs
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
-
-load_dotenv(".env", verbose=True)
 
 app.secret_key = os.environ['SECRET_KEY']
 api = Api(app)
@@ -50,6 +56,7 @@ def handle_marshmallow_validation(err):
         'description': err.messages,
         'error': 'Validation Error'
     }), 400
+
 
 @jwt.user_claims_loader
 def add_claims_to_jwt(identity):
@@ -122,11 +129,14 @@ api.add_resource(UserLogout, '/logout')
 api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(Confirmation, '/user_confirmation/<string:confirmation_id>')
 api.add_resource(ConfirmationByUser, '/confirmation/user/<int:user_id>')
-
+api.add_resource(GithubLogin, '/login/github')
+api.add_resource(GithubAuthorize, '/login/github/authorized', endpoint='github.authorize')
+api.add_resource(SetUserPassword, '/user/set_password')
 
 
 if __name__ == '__main__':
     from db import db
     db.init_app(app)
-    ma.init_app(app) # Attach flask-marshmallow to current app
+    ma.init_app(app)  # Attach flask-marshmallow to current app
+    oauth.init_app(app)
     app.run(port=5000, debug=True)

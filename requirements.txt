@@ -1,8 +1,11 @@
 Flask-JWT-Extended
 Flask-RESTful
+Flask-OAuthlib
 Flask-SQLAlchemy
 Flask-marshmallow
 Flask-Uploads
 marshmallow-sqlalchemy
 marshmallow
 requests
+psycopg2
+python-dotenv

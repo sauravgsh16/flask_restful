@@ -5,6 +5,7 @@ from db import db
 
 CONFIMATION_EXPIRATION_DELTA = 1800
 
+
 class ConfirmationModel(db.Model):
     __tablename__ = 'confirmations'
 
